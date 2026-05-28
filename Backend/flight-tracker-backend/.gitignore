@@ -13,6 +13,9 @@ target/
 .springBeans
 .sts4-cache
 
+# Spring Boot config with secrets
+src/main/resources/application.properties
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
