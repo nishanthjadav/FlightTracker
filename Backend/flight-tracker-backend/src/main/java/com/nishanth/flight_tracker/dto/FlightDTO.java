@@ -11,6 +11,7 @@ public class FlightDTO {
     private Double depLng;
     private Double arrLat;
     private Double arrLng;
+    private String icao24;
 
     public FlightDTO() {}
 
@@ -54,4 +55,7 @@ public class FlightDTO {
 
     public Double getArrLng() { return arrLng; }
     public void setArrLng(Double arrLng) { this.arrLng = arrLng; }
+
+    public String getIcao24() { return icao24; }
+    public void setIcao24(String icao24) { this.icao24 = icao24; }
 }

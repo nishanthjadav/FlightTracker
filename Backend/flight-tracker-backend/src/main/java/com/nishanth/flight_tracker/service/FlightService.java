@@ -58,6 +58,7 @@ public class FlightService {
 
                 String dep = (String) m.get("estDepartureAirport");
                 String arr = (String) m.get("estArrivalAirport");
+                String icao24 = m.get("icao24") instanceof String ? (String) m.get("icao24") : null;
 
                 if (dep == null || arr == null) continue;
                 if (dep.isBlank() || arr.isBlank()) continue;
@@ -90,14 +91,20 @@ public class FlightService {
                             arrAirport.getLat(),
                             arrAirport.getLon()
                     );
+                    dto.setIcao24(icao24);
                 } else {
                     dto = new FlightDTO(dep, arr, firstSeen, lastSeen);
+                    dto.setIcao24(icao24);
                 }
 
                 out.add(dto);
             }
 
             log.info("Parsed flights: {}", out.size());
+            if (!out.isEmpty()) {
+                FlightDTO sample = out.get(0);
+                log.info("Sample flight: dep={} arr={} icao24={}", sample.getDepartureAirport(), sample.getArrivalAirport(), sample.getIcao24());
+            }
 
             flightCache.set(out);
             lastFetchTime = System.currentTimeMillis();

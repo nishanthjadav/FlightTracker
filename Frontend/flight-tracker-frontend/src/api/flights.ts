@@ -3,11 +3,12 @@ export type Flight = {
   arrivalAirport: string | null;
   firstSeen?: number;
   lastSeen?: number;
+  icao24?: string | null;
 
-  departureLat?: number | null;
-  departureLng?: number | null;
-  arrivalLat?: number | null;
-  arrivalLng?: number | null;
+  depLat?: number | null;
+  depLng?: number | null;
+  arrLat?: number | null;
+  arrLng?: number | null;
 };
 
 export async function getFlights(): Promise<Flight[]> {
@@ -35,6 +36,16 @@ export async function getFlights(): Promise<Flight[]> {
             typeof it.firstSeen === "number" ? it.firstSeen : undefined,
           lastSeen:
             typeof it.lastSeen === "number" ? it.lastSeen : undefined,
+          depLat:
+            typeof it.depLat === "number" ? it.depLat : null,
+          depLng:
+            typeof it.depLng === "number" ? it.depLng : null,
+          arrLat:
+            typeof it.arrLat === "number" ? it.arrLat : null,
+          arrLng:
+            typeof it.arrLng === "number" ? it.arrLng : null,
+          icao24:
+            typeof it.icao24 === "string" ? it.icao24 : null,
         };
       })
       .filter(Boolean) as Flight[];

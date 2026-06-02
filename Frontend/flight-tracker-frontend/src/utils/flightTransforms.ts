@@ -11,22 +11,23 @@ export function buildArcs(flights: Flight[]): Arc[] {
   const out: Arc[] = [];
 
   for (const f of flights) {
-    if (!f.departureAirport || !f.arrivalAirport) continue;
+      console.log("flight sample:", f);
 
     if (
-      f.departureLat == null ||
-      f.departureLng == null ||
-      f.arrivalLat == null ||
-      f.arrivalLng == null
+      f.depLat == null ||
+      f.depLng == null ||
+      f.arrLat == null ||
+      f.arrLng == null
     ) continue;
 
     out.push({
-      startLat: f.departureLat,
-      startLng: f.departureLng,
-      endLat: f.arrivalLat,
-      endLng: f.arrivalLng,
+      startLat: f.depLat,
+      startLng: f.depLng,
+      endLat: f.arrLat,
+      endLng: f.arrLng,
     });
   }
 
+  console.log("Built arcs:", out.length);
   return out;
 }

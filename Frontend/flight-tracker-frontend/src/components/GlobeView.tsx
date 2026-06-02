@@ -8,7 +8,14 @@ export type Arc = {
   endLng: number;
 };
 
-export default function GlobeView({ arcs }: { arcs: Arc[] }) {
+export type Plane = {
+  lat: number;
+  lng: number;
+  icao24: string;
+  heading?: number | null;
+};
+
+export default function GlobeView({ arcs, planes }: { arcs: Arc[]; planes?: Plane[] }) {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "black" }}>
       <Globe
@@ -18,7 +25,13 @@ export default function GlobeView({ arcs }: { arcs: Arc[] }) {
         arcDashLength={0.4}
         arcDashGap={0.2}
         arcDashAnimateTime={2000}
-      />
+        pointsData={planes || []}
+        pointLat={(d: any) => d.lat}
+        pointLng={(d: any) => d.lng}
+        pointColor={() => "orange"}
+        pointRadius={() => 0.4}
+        pointsMerge={true}
+        />
     </div>
   );
 }
