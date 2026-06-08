@@ -67,7 +67,7 @@ public class OpenSkyClient {
             HttpEntity<Void> request = new HttpEntity<>(headers);
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
 
-            if (resp.getStatusCodeValue() != 200) return null;
+            if (resp.getStatusCode().value() != 200) return null;
 
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readTree(resp.getBody());

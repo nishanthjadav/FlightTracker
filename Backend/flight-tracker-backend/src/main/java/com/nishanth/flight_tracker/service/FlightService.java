@@ -6,10 +6,14 @@ import com.nishanth.flight_tracker.client.HexDbClient;
 import com.nishanth.flight_tracker.client.OpenSkyClient;
 import com.nishanth.flight_tracker.dto.FlightDTO;
 import com.nishanth.flight_tracker.model.Airport;
+
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.*;
 
 @Service
@@ -27,13 +31,19 @@ public class FlightService {
     private long lastFetchTime = 0;
     private static final long CACHE_TTL_MS = 60_000; // 1 min refresh
 
+    @Value("${app.dev-mode:false}")
+    private boolean devMode;
+
     public FlightService(OpenSkyClient openSkyClient, HexDbClient hexDbClient) {
         this.openSkyClient = openSkyClient;
         this.hexDbClient = hexDbClient;
     }
 
     public List<FlightDTO> getFlights() {
-
+        if (devMode && !flightCache.get().isEmpty()) {
+            log.info("DEV MODE: serving cached flights");
+            return flightCache.get();
+        }
         if (!flightCache.get().isEmpty() &&
             System.currentTimeMillis() - lastFetchTime < CACHE_TTL_MS) {
             return flightCache.get();
@@ -107,6 +117,7 @@ public class FlightService {
             }
 
             flightCache.set(out);
+            saveFlightsToDisk(out);
             lastFetchTime = System.currentTimeMillis();
 
             return out;
@@ -114,6 +125,39 @@ public class FlightService {
         } catch (Exception e) {
             log.error("FlightService.getFlights failed", e);
             return flightCache.get(); // fallback instead of empty
+        }
+    }
+    private void saveFlightsToDisk(List<FlightDTO> flights) {
+        try {
+            mapper.writerWithDefaultPrettyPrinter()
+              .writeValue(
+                  new java.io.File("src/main/resources/cache/flights.json"),
+                  flights
+              );
+        } catch (Exception e) {
+            log.error("Failed saving flight cache", e);
+        }
+    }
+    
+        @PostConstruct
+        public void loadCacheOnStartup() {
+        try {
+            File file = new File("src/main/resources/cache/flights.json");
+
+            if (!file.exists()) return;
+
+            List<FlightDTO> cached =
+                mapper.readValue(
+                    file,
+                    new TypeReference<List<FlightDTO>>() {}
+                );
+
+            flightCache.set(cached);
+
+            log.info("Loaded {} cached flights", cached.size());
+
+        } catch (Exception e) {
+            log.error("Failed loading flight cache", e);
         }
     }
 
