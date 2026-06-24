@@ -13,6 +13,12 @@ public class FlightDTO {
     private Double arrLng;
     private String icao24;
 
+    private String callsign;
+    private String originCountry;
+    private String aircraftModel;
+    private String celebrityName;
+    private String celebrityCategory;
+
     public FlightDTO() {}
 
     public FlightDTO(String departureAirport, String arrivalAirport, Long firstSeen, Long lastSeen, Double depLat, Double depLng, Double arrLat, Double arrLng) {
@@ -58,4 +64,19 @@ public class FlightDTO {
 
     public String getIcao24() { return icao24; }
     public void setIcao24(String icao24) { this.icao24 = icao24; }
+
+    public String getCallsign() { return callsign; }
+    public void setCallsign(String callsign) { this.callsign = callsign; }
+
+    public String getOriginCountry() { return originCountry; }
+    public void setOriginCountry(String originCountry) { this.originCountry = originCountry; }
+
+    public String getAircraftModel() { return aircraftModel; }
+    public void setAircraftModel(String aircraftModel) { this.aircraftModel = aircraftModel; }
+
+    public String getCelebrityName() { return celebrityName; }
+    public void setCelebrityName(String celebrityName) { this.celebrityName = celebrityName; }
+
+    public String getCelebrityCategory() { return celebrityCategory; }
+    public void setCelebrityCategory(String celebrityCategory) { this.celebrityCategory = celebrityCategory; }
 }

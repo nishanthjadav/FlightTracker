@@ -1,13 +1,20 @@
 package com.nishanth.flight_tracker.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.nishanth.flight_tracker.dto.BatchStateRequest;
 import com.nishanth.flight_tracker.dto.FlightDTO;
+import com.nishanth.flight_tracker.dto.PlaneStateDTO;
+import com.nishanth.flight_tracker.model.Celebrity;
+import com.nishanth.flight_tracker.service.AnalyticsService;
+import com.nishanth.flight_tracker.service.CelebrityService;
 import com.nishanth.flight_tracker.service.FlightService;
 import com.nishanth.flight_tracker.client.OpenSkyClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -21,17 +28,56 @@ public class FlightController {
 
     private final FlightService flightService;
     private final OpenSkyClient openSkyClient;
+    private final CelebrityService celebrityService;
+    private final AnalyticsService analyticsService;
 
-    public FlightController(FlightService flightService, OpenSkyClient openSkyClient) {
+    public FlightController(
+        FlightService flightService,
+        OpenSkyClient openSkyClient,
+        CelebrityService celebrityService,
+        AnalyticsService analyticsService
+    ) {
         this.flightService = flightService;
         this.openSkyClient = openSkyClient;
+        this.celebrityService = celebrityService;
+        this.analyticsService = analyticsService;
     }
 
     @GetMapping("/api/flights")
     public List<FlightDTO> getFlights() {
         List<FlightDTO> flights = flightService.getFlights();
-        log.info("Controller returning {} flights", flights.size());
+        log.info("Returning {} flights", flights.size());
         return flights;
+    }
+
+    @GetMapping("/api/flights/celebrities")
+    public List<FlightDTO> getCelebrityFlights() {
+        List<FlightDTO> flights = flightService.getCelebrityFlights();
+        log.info("Returning {} celebrity flights from cache", flights.size());
+        return flights;
+    }
+
+    @GetMapping("/api/celebrities/airborne")
+    public List<FlightDTO> probeCelebrityFlights() {
+        return flightService.probeCelebrityFlights();
+    }
+
+    @GetMapping("/api/celebrities")
+    public List<Celebrity> getCelebrities() {
+        return celebrityService.getAll();
+    }
+
+    @PostMapping("/api/states/batch")
+    public List<PlaneStateDTO> getStatesBatch(@RequestBody BatchStateRequest request) {
+        if (request == null || request.getIcao24s() == null || request.getIcao24s().isEmpty()) {
+            return List.of();
+        }
+        return openSkyClient.fetchStatesBatch(request.getIcao24s());
+    }
+
+    @GetMapping("/api/analytics")
+    public Map<String, Object> getAnalytics() {
+        return analyticsService.compute();
     }
 
     @GetMapping("/api/state/{icao24}")
@@ -46,7 +92,6 @@ public class FlightController {
         if (states == null || !states.isArray() || states.size() == 0) return out;
 
         JsonNode s = states.get(0);
-        // per spec: [5]=longitude, [6]=latitude, [9]=velocity, [10]=true_track
         Double lon = s.has(5) && !s.get(5).isNull() ? s.get(5).asDouble() : null;
         Double lat = s.has(6) && !s.get(6).isNull() ? s.get(6).asDouble() : null;
         Double velocity = s.has(9) && !s.get(9).isNull() ? s.get(9).asDouble() : null;
@@ -56,9 +101,6 @@ public class FlightController {
         out.put("lng", lon);
         out.put("velocity", velocity);
         out.put("heading", heading);
-
-        log.info("Received position: icao={} lat={} lng={} heading={} vel={}", icao24, lat, lon, heading, velocity);
-
         return out;
     }
 }
