@@ -5,8 +5,8 @@ A real-time flight tracking app with a 3D interactive globe. Browse live flights
 ## What it does
 
 - Pulls live flight data from the [OpenSky Network](https://opensky-network.org/) and displays planes on a 3D globe
-- Tracks a curated list of celebrity aircraft — see which ones are airborne right now
-- Filter flights by origin country, altitude, speed, aircraft model, and more
+- Tracks a list of celebrity aircraft
+- Filter flights by origin country, altitude, speed, aircraft model, etc.
 - Click any plane to see details: callsign, origin, destination, speed, heading, altitude
 - Analytics panel with a breakdown of the current flight data
 
