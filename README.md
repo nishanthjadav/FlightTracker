@@ -1,2 +1,2 @@
 # FlightTracker
-Tracks flight data and provides data insights.
+Tracks general and celebrity flight data.
