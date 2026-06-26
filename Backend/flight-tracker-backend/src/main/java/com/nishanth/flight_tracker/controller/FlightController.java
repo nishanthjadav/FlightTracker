@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 public class FlightController {
@@ -72,8 +74,49 @@ public class FlightController {
         if (request == null || request.getIcao24s() == null || request.getIcao24s().isEmpty()) {
             return List.of();
         }
-        return openSkyClient.fetchStatesBatch(request.getIcao24s());
+
+        // Cache by sorted-set of icao24s (order-independent) for 60s. The frontend
+        // polls every 10s, so the same key collapses ~5 of every 6 requests to a
+        // memory hit. The synchronized block also coalesces concurrent identical
+        // requests so we don't fan out to OpenSky from multiple threads at once.
+        String key = request.getIcao24s().stream()
+            .filter(s -> s != null && !s.isBlank())
+            .map(String::toLowerCase)
+            .collect(java.util.stream.Collectors.toCollection(TreeSet::new))
+            .toString();
+
+        long now = System.currentTimeMillis();
+        BatchCacheEntry cached = batchCache.get();
+        if (cached != null && cached.key.equals(key) && (now - cached.timestamp) < BATCH_CACHE_TTL_MS) {
+            return cached.value;
+        }
+
+        // Serialize misses so a burst of identical requests fans in to one upstream call.
+        synchronized (batchCache) {
+            cached = batchCache.get();
+            now = System.currentTimeMillis();
+            if (cached != null && cached.key.equals(key) && (now - cached.timestamp) < BATCH_CACHE_TTL_MS) {
+                return cached.value;
+            }
+
+            List<PlaneStateDTO> fresh = openSkyClient.fetchStatesBatch(request.getIcao24s());
+            if (!fresh.isEmpty()) {
+                batchCache.set(new BatchCacheEntry(key, fresh, System.currentTimeMillis()));
+                return fresh;
+            }
+            // Empty result (either OpenSky rate-limited us or returned nothing) —
+            // return stale cache if we have one for this key, else empty list.
+            if (cached != null && cached.key.equals(key)) {
+                return cached.value;
+            }
+            return fresh;
+        }
     }
+
+    private static final long BATCH_CACHE_TTL_MS = 60_000;
+    private final AtomicReference<BatchCacheEntry> batchCache = new AtomicReference<>();
+
+    private record BatchCacheEntry(String key, List<PlaneStateDTO> value, long timestamp) {}
 
     @GetMapping("/api/analytics")
     public Map<String, Object> getAnalytics() {

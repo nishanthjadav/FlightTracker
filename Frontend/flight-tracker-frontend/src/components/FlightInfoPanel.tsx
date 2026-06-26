@@ -1,4 +1,5 @@
 import type { Flight, PlaneStateDTO } from "../api/flights";
+import { airportLabel } from "../utils/airportLabels";
 
 type Props = {
   flight: Flight | null;
@@ -13,6 +14,9 @@ export default function FlightInfoPanel({ flight, state, onClose }: Props) {
   const altitudeFt = state?.altitude != null ? Math.round(state.altitude * 3.281) : null;
   const velocityKts = state?.velocity != null ? Math.round(state.velocity * 1.944) : null;
   const heading = state?.heading != null ? Math.round(state.heading) : null;
+
+  const depLabel = flight.departureAirport ? airportLabel(flight.departureAirport) : "----";
+  const arrLabel = flight.arrivalAirport ? airportLabel(flight.arrivalAirport) : "----";
 
   return (
     <aside className="info-panel">
@@ -42,9 +46,9 @@ export default function FlightInfoPanel({ flight, state, onClose }: Props) {
         )}
 
         <div className="route">
-          <div className="airport-code">{flight.departureAirport || "----"}</div>
+          <div className="airport-code" title={flight.departureAirport ?? undefined}>{depLabel}</div>
           <div className="route-arrow" />
-          <div className="airport-code">{flight.arrivalAirport || "----"}</div>
+          <div className="airport-code" title={flight.arrivalAirport ?? undefined}>{arrLabel}</div>
         </div>
 
         <div className="info-grid">

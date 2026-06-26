@@ -19,7 +19,7 @@ export default function ModeToggle({ mode, onChange, celebrityCount }: Props) {
         className={mode === "celebrities" ? "active celebrity" : ""}
         onClick={() => onChange("celebrities")}
       >
-        Celebrities {celebrityCount > 0 && `(${celebrityCount})`}
+        ★ Celebrities {celebrityCount > 0 && `(${celebrityCount})`}
       </button>
     </div>
   );

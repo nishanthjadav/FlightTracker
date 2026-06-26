@@ -142,7 +142,7 @@ const GlobeView = forwardRef<GlobeHandle, Props>(function GlobeView(
   }, [size.width]);
 
   const pathPointAlt = useCallback((pt: PathPoint) => {
-    return 0.005 + pt[2] * 0.28;
+    return 0.005 + pt[2] * 0.06;
   }, []);
 
   // three-globe's pathColor is called once per *path* and may return a single color
@@ -207,7 +207,7 @@ const GlobeView = forwardRef<GlobeHandle, Props>(function GlobeView(
           objectLat={(d: object) => (d as RenderedPlane).lat}
           objectLng={(d: object) => (d as RenderedPlane).lng}
           objectAltitude={() => 0.015}
-          objectFacesSurface={false}
+          objectFacesSurfaces={false}
           objectThreeObject={(d: object) => {
             const p = d as RenderedPlane;
             const base = p.isCelebrity ? PLANE_GEOMETRY_GOLD : PLANE_GEOMETRY;

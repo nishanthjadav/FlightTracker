@@ -36,6 +36,9 @@ public class FlightService {
     private long lastFetchTime = 0;
     private static final long IN_MEMORY_TTL_MS = 60_000; // 1 min in-memory refresh
 
+    private List<FlightDTO> celebrityProbeCache = List.of();
+    private long lastCelebrityProbeTime = 0;
+
     @Value("${app.cache-dir:cache}")
     private String cacheDir;
 
@@ -190,21 +193,23 @@ public class FlightService {
 
             long ageMs = System.currentTimeMillis() - file.lastModified();
             long ttlMs = cacheTtlHours * 3_600_000L;
-
-            if (ageMs > ttlMs) {
-                log.info("Disk cache is {}h old (TTL {}h), will fetch fresh data",
-                    ageMs / 3_600_000, cacheTtlHours);
-                return;
-            }
+            boolean stale = ageMs > ttlMs;
 
             List<FlightDTO> cached = mapper.readValue(file, new TypeReference<List<FlightDTO>>() {});
-            // Always re-apply celebrity enrichment in case the catalog has been updated since the cache was written.
             enrichWithCelebrities(cached);
             flightCache.set(cached);
-            lastFetchTime = file.lastModified();
 
-            log.info("Loaded {} flights from disk cache ({}min old)",
-                cached.size(), ageMs / 60_000);
+            if (stale) {
+                // Load stale data so we have something to serve, but set lastFetchTime=0
+                // so the next request will trigger a fresh fetch from OpenSky.
+                lastFetchTime = 0;
+                log.info("Loaded {} flights from stale disk cache ({}h old, TTL {}h) — will refresh on next request",
+                    cached.size(), ageMs / 3_600_000, cacheTtlHours);
+            } else {
+                lastFetchTime = file.lastModified();
+                log.info("Loaded {} flights from disk cache ({}min old)",
+                    cached.size(), ageMs / 60_000);
+            }
 
         } catch (Exception e) {
             log.error("Failed loading flight cache from disk", e);
@@ -276,6 +281,12 @@ public class FlightService {
      * This catches celebrity flights that don't appear in the 1-hour /flights/all window.
      */
     public List<FlightDTO> probeCelebrityFlights() {
+        long ttlMs = cacheTtlHours * 3_600_000L;
+        if (!celebrityProbeCache.isEmpty() &&
+                System.currentTimeMillis() - lastCelebrityProbeTime < ttlMs) {
+            return celebrityProbeCache;
+        }
+
         List<String> catalogIcaos = celebrityService.getAll().stream()
             .flatMap(c -> c.getAircraft().stream())
             .map(CelebrityAircraft::getIcao24)
@@ -309,6 +320,11 @@ public class FlightService {
 
         log.info("Celebrity probe: {} icao24s queried, {} states returned, {} airborne",
             catalogIcaos.size(), states.size(), airborne.size());
+
+        if (!airborne.isEmpty()) {
+            celebrityProbeCache = airborne;
+            lastCelebrityProbeTime = System.currentTimeMillis();
+        }
         return airborne;
     }
 }
